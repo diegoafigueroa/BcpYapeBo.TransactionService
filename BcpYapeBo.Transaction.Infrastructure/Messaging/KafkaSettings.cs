@@ -6,6 +6,7 @@ namespace BcpYapeBo.Transaction.Infrastructure.Messaging
     {
         public string BootstrapServers { get; set; }
         public string TransactionAntiFraudServiceValidationTopic { get; set; }
+        public string TransactionAntiFraudServiceStatusTopic { get; set; }
         public string SaslUsername { get; set; }
         public string SaslPassword { get; set; }
         public string SecurityProtocol { get; set; }
@@ -13,14 +14,36 @@ namespace BcpYapeBo.Transaction.Infrastructure.Messaging
 
         public ProducerConfig GetProducerConfig()
         {
-            // CONFIGURACIÓN BÁSICA
+            // BASIC CONFIGURATION
             var config = new ProducerConfig
             {
                 BootstrapServers = BootstrapServers,
-                Acks = Acks.All // CONFIRMACIÓN DE TODAS LAS RÉPLICAS
+                Acks = Acks.All // CONFIRMATION FROM ALL REPLICAS
             };
 
-            // SI HAY CREDENCIALES, LAS AÑADIMOS
+            // ADD CREDENTIALS IF PROVIDED
+            if (!string.IsNullOrEmpty(SaslUsername) && !string.IsNullOrEmpty(SaslPassword))
+            {
+                config.SaslUsername = SaslUsername;
+                config.SaslPassword = SaslPassword;
+                config.SecurityProtocol = ParseOrDefault(SecurityProtocol, Confluent.Kafka.SecurityProtocol.Plaintext);
+                config.SaslMechanism = ParseOrDefault(SaslMechanism, Confluent.Kafka.SaslMechanism.Plain);
+            }
+
+            return config;
+        }
+
+        public ConsumerConfig GetConsumerConfig(string groupId)
+        {
+            // BASIC CONFIGURATION
+            var config = new ConsumerConfig
+            {
+                BootstrapServers = BootstrapServers,
+                GroupId = groupId,
+                AutoOffsetReset = AutoOffsetReset.Earliest
+            };
+
+            // ADD CREDENTIALS IF PROVIDED
             if (!string.IsNullOrEmpty(SaslUsername) && !string.IsNullOrEmpty(SaslPassword))
             {
                 config.SaslUsername = SaslUsername;

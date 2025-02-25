@@ -22,10 +22,10 @@ namespace BcpYapeBo.Transaction.Infrastructure.Messaging
         {
             _logger = logger;
 
-            // Retrieve Kafka configuration
+            // RETRIEVE KAFKA CONFIGURATION
             var kafkaSettings = GetKafkaSettings(configuration);
 
-            // Parse ProducerConfig using KafkaSettings
+            // PARSE PRODUCER CONFIG USING KAFKASETTINGS
             _kafkaProducer = new ProducerBuilder<Null, string>(kafkaSettings.GetProducerConfig()).Build();
             _topic = kafkaSettings.TransactionAntiFraudServiceValidationTopic;
 
@@ -36,7 +36,7 @@ namespace BcpYapeBo.Transaction.Infrastructure.Messaging
         {
             var settings = configuration.GetSection("Kafka").Get<KafkaSettings>();
 
-            // Validate essential fields
+            // VALIDATE ESSENTIAL FIELDS
             if (string.IsNullOrEmpty(settings.BootstrapServers))
                 throw new ArgumentNullException("Kafka servers are not configured.");
 
