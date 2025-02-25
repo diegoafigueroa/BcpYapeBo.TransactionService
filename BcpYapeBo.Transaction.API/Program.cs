@@ -11,12 +11,13 @@ using BcpYapeBo.Transaction.Application.Ports.Driven;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configuración de Serilog
-builder.Host.UseSerilog((context, config) =>
-{
-    config.WriteTo.Console();
-    config.ReadFrom.Configuration(context.Configuration);
-});
+// CONFIGURAR SERILOG
+Log.Logger = new LoggerConfiguration()
+    .ReadFrom.Configuration(builder.Configuration)
+    .CreateLogger();
+
+// REEMPLAZAR EL LOGGING POR DEFECTO CON SERILOG
+builder.Host.UseSerilog();
 
 // Configurar PostgreSQL con la conexión del appsettings.json
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -66,6 +67,12 @@ if (app.Environment.IsDevelopment())
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseHttpsRedirection();
 app.MapControllers();
+
+// ASEGURARSE DE CERRAR EL LOGGER AL FINALIZAR LA EJECUCIÓN
+app.Lifetime.ApplicationStopped.Register(() =>
+{
+    Log.CloseAndFlush();
+});
 
 app.Run();
 
