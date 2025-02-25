@@ -107,7 +107,7 @@ sequenceDiagram
 
 ## Requisitos Previos
 
-- .NET 6 o superior
+- .NET 8 o superior
 - PostgreSQL
 - Kafka
 
