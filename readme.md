@@ -4,6 +4,98 @@
 
 API que maneja las transacciones de Yape Bolivia, permitiendo la creación y consulta de transacciones bancarias con integración a un servicio de anti-fraude a través de Kafka.
 
+## Arquitectura
+
+La aplicación sigue una arquitectura hexagonal (ports and adapters) para aislar el dominio de negocio de las preocupaciones externas.
+
+```mermaid
+graph TD
+    subgraph "API Layer"
+        A[Controllers]
+        B[DTOs]
+        C[Middleware]
+    end
+    
+    subgraph "Application Layer"
+        D[Services]
+        E[Driving Ports]
+        F[Driven Ports]
+    end
+    
+    subgraph "Domain Layer"
+        G[Entities]
+        H[Value Objects]
+        I[Domain Rules]
+    end
+    
+    subgraph "Infrastructure Layer"
+        J[Repositories]
+        K[Kafka Messaging]
+        L[DB Context]
+    end
+    
+    A --> B
+    A --> E
+    D --> E
+    D --> F
+    D --> G
+    G --> H
+    G --> I
+    J --> F
+    K --> F
+    J --> L
+    
+    %% External systems
+    subgraph "External Systems"
+        M[(PostgreSQL)]
+        N[Kafka]
+        O[Anti-Fraud Service]
+    end
+    
+    L --> M
+    K --> N
+    N --> O
+    O --> N
+    K -.-> O
+```
+
+### Flujo de Transacción
+
+```mermaid
+sequenceDiagram
+    participant Cliente
+    participant API as API Controller
+    participant Service as Transaction Service
+    participant Repository
+    participant DB as PostgreSQL
+    participant Producer as Kafka Producer
+    participant Consumer as Kafka Consumer
+    participant AntiFraud as Anti-Fraud Service
+    
+    Cliente->>API: POST /api/Transactions/CreateTransaction
+    API->>Service: CreateTransactionAsync()
+    Service->>Repository: SaveAsync(transaction)
+    Repository->>DB: SaveChanges()
+    Service->>Producer: Validate(transaction)
+    Producer->>Kafka: ProduceAsync()
+    API->>Cliente: TransactionExternalId
+    
+    Kafka->>AntiFraud: Message
+    AntiFraud->>Kafka: Validation Result
+    Kafka->>Consumer: Consume()
+    Consumer->>Repository: Update Transaction Status
+    Repository->>DB: SaveChanges()
+    
+    Cliente->>API: GET /api/Transactions/{id}
+    API->>Service: GetTransactionAsync()
+    Service->>Repository: GetByIdAsync()
+    Repository->>DB: Query
+    DB->>Repository: Transaction
+    Repository->>Service: Transaction
+    Service->>API: Transaction
+    API->>Cliente: Transaction Details
+```
+
 ## Características
 
 - Arquitectura hexagonal (puertos y adaptadores) para separar la lógica de negocio de la infraestructura
@@ -15,7 +107,7 @@ API que maneja las transacciones de Yape Bolivia, permitiendo la creación y con
 
 ## Requisitos Previos
 
-- .NET 8 o superior
+- .NET 6 o superior
 - PostgreSQL
 - Kafka
 
@@ -125,6 +217,64 @@ Contiene las implementaciones concretas de los puertos secundarios.
 - **Messaging/**: Implementación de servicios de Kafka para anti-fraude
 - **DTOs/**: Objetos de transferencia de datos para la comunicación con servicios externos
 
+## Decisiones Críticas de Diseño
+
+### 1. Arquitectura Hexagonal
+
+**Decisión:** Implementar una arquitectura hexagonal (ports and adapters).
+
+**Razones:**
+- Separación clara entre la lógica de negocio y la infraestructura
+- Facilita el testing al poder aislar el dominio
+- Permite cambiar componentes de infraestructura (como la base de datos o mensajería) sin afectar al dominio
+- Mejora la mantenibilidad al tener responsabilidades bien definidas
+
+**Consecuencias:**
+- Mayor complejidad inicial en la estructura del proyecto
+- Requiere disciplina para mantener la separación de capas
+
+### 2. Value Objects Inmutables
+
+**Decisión:** Usar Records de C# para los Value Objects del dominio.
+
+**Razones:**
+- Proporciona inmutabilidad por defecto
+- Implementación automática de comparación basada en valores
+- Validación centralizada de reglas de negocio
+- Previene estados inválidos
+
+**Consecuencias:**
+- Cualquier cambio en un value object requiere crear una nueva instancia
+
+### 3. Procesamiento Asíncrono con Kafka
+
+**Decisión:** Utilizar Kafka con configuración de alta confiabilidad (Acks.All) para la validación anti-fraude.
+
+**Razones:**
+- Desacopla el flujo principal de transacciones de la validación anti-fraude
+- Permite escalar cada componente independientemente
+- Garantiza que ninguna transacción se pierda incluso si hay fallos en brokers
+- Mejora el rendimiento de la API al no bloquear la respuesta esperando validación
+
+**Consecuencias:**
+- Eventual consistencia en el estado de las transacciones
+- Mayor complejidad operativa al gestionar Kafka
+- Necesidad de manejar escenarios de fallos en la comunicación
+
+### 4. BackgroundService para Consumo de Kafka
+
+**Decisión:** Implementar el consumidor de Kafka como un BackgroundService.
+
+**Razones:**
+- Procesamiento continuo independiente del ciclo de vida de las solicitudes HTTP
+- Gestión automática del ciclo de vida por el contenedor de DI de .NET
+- Graceful shutdown cuando la aplicación se detiene
+- Uso eficiente de recursos al utilizar TaskCreationOptions.LongRunning
+
+**Consecuencias:**
+- Requiere consideraciones especiales para el manejo de errores
+- Necesita monitoreo específico al ejecutarse en segundo plano
+
 ## Endpoints
 
 ### POST /api/Transactions/CreateTransaction
@@ -218,6 +368,24 @@ Para agregar nuevos tipos de transacciones, actualice el enum `TransactionType` 
 ### Modificar Reglas de Validación
 
 Las reglas de validación de dominio se encuentran en la entidad `BankTransaction` y en los value objects.
+
+## Monitoreo y Operación
+
+### Métricas Recomendadas
+
+- Tasa de transacciones por segundo
+- Latencia promedio de procesamiento
+- Tasa de transacciones rechazadas por anti-fraude
+- Tamaño de la cola de Kafka
+- Retrasos en el consumo de mensajes
+
+### Registros (Logs)
+
+La aplicación utiliza Serilog para un registro estructurado, facilitando:
+- Seguimiento de transacciones a través del sistema
+- Identificación de problemas en la integración con Kafka
+- Monitoreo de rendimiento
+- Alertas en errores críticos
 
 ## Licencia
 
