@@ -5,6 +5,7 @@ namespace BcpYapeBo.Transaction.Application.Ports.Driven
     public interface ITransactionRepository
     {
         Task SaveAsync(BankTransaction bankTransaction);
+        Task UpdateAsync(BankTransaction bankTransaction);
         Task<BankTransaction> GetByIdAsync(Guid transactionExternalId);
     }
 }

@@ -1,6 +1,7 @@
 ﻿using BcpYapeBo.Transaction.Application.Ports.Driven;
 using BcpYapeBo.Transaction.Application.Ports.Driving;
 using BcpYapeBo.Transaction.Domain.Entities;
+using BcpYapeBo.Transaction.Domain.Enums;
 using BcpYapeBo.Transaction.Domain.ValueObjects;
 using System.Transactions;
 
@@ -48,6 +49,19 @@ namespace BcpYapeBo.Transaction.Application.Services
         public async Task<BankTransaction> GetTransactionAsync(Guid transactionExternalId)
         {
             return await _transactionRepository.GetByIdAsync(transactionExternalId);
+        }
+
+        public async Task UpdateTransactionStatusWithAntiFraudCheckAsync(AntiFraudValidationResult antiFraudValidationResult)
+        {
+            // OBTIENE LA TRANSACCIÓN DESDE EL REPOSITORIO DE BASE DE DATOS.
+            var transaction = await _transactionRepository.GetByIdAsync(antiFraudValidationResult.TransactionExternalId);
+
+            if (transaction != null)
+            {
+                // ACTUALIZA EL ESTADO DE LA TRANSACCIÓN Y LA RAZÓN DE RECHAZO.
+                transaction.MarkAsProcessed(antiFraudValidationResult.Status, antiFraudValidationResult.RejectionReason);
+                await _transactionRepository.UpdateAsync(transaction);
+            }
         }
     }
 }

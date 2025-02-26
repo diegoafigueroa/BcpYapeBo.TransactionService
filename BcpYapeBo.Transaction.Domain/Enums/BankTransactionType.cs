@@ -1,6 +1,6 @@
 ﻿namespace BcpYapeBo.Transaction.Domain.Enums
 {
-    public enum TransactionType
+    public enum BankTransactionType
     {
         Transfer = 1,
         Deposit = 2,

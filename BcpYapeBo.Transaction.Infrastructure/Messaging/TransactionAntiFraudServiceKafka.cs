@@ -32,20 +32,6 @@ namespace BcpYapeBo.Transaction.Infrastructure.Messaging
             _logger.LogInformation("Kafka producer initialized with topic {Topic} and servers {Servers}", _topic, kafkaSettings.BootstrapServers);
         }
 
-        private static KafkaSettings GetKafkaSettings(IConfiguration configuration)
-        {
-            var settings = configuration.GetSection("Kafka").Get<KafkaSettings>();
-
-            // VALIDATE ESSENTIAL FIELDS
-            if (string.IsNullOrEmpty(settings.BootstrapServers))
-                throw new ArgumentNullException("Kafka servers are not configured.");
-
-            if (string.IsNullOrEmpty(settings.TransactionAntiFraudServiceValidationTopic))
-                throw new ArgumentNullException("Kafka topic is not configured.");
-
-            return settings;
-        }
-
         public async Task Validate(BankTransaction message)
         {
             var jsonMessage = JsonSerializer.Serialize(message);
@@ -69,6 +55,20 @@ namespace BcpYapeBo.Transaction.Infrastructure.Messaging
                 _logger.LogError(ex, "Kafka error while sending transaction {TransactionId}: {Error}", transactionId, ex.Error.Reason);
                 throw new Exception($"Kafka error: {ex.Error.Reason}", ex);
             }
+        }
+
+        private static KafkaSettings GetKafkaSettings(IConfiguration configuration)
+        {
+            var settings = configuration.GetSection("Kafka").Get<KafkaSettings>();
+
+            // VALIDATE ESSENTIAL FIELDS
+            if (string.IsNullOrEmpty(settings.BootstrapServers))
+                throw new ArgumentNullException("Kafka servers are not configured.");
+
+            if (string.IsNullOrEmpty(settings.TransactionAntiFraudServiceValidationTopic))
+                throw new ArgumentNullException("Kafka topic is not configured.");
+
+            return settings;
         }
 
         public void Dispose()

@@ -1,6 +1,6 @@
 ﻿namespace BcpYapeBo.Transaction.Domain.Enums
 {
-    public enum TransactionStatus
+    public enum BankTransactionStatus
     {
         Pending,
         Approved,

@@ -29,9 +29,7 @@ builder.Services.AddControllers();
 // REGISTER INTERNAL/EXTERNAL PORTS IN THE DEPENDENCY CONTAINER (WITH THEIR ADAPTERS)
 builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
-builder.Services.AddSingleton<ITransactionAntiFraudService, TransactionAntiFraudServiceKafka>();
-
-// TODO
+builder.Services.AddScoped<ITransactionAntiFraudService, TransactionAntiFraudServiceKafka>();
 builder.Services.AddHostedService<TransactionAntiFraudStatusConsumerKafka>();
 
 // ADD SWAGGER CONFIGURATION

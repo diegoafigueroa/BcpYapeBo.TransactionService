@@ -21,9 +21,13 @@ namespace BcpYapeBo.Transaction.Infrastructure.Repositories
 
         public async Task<BankTransaction> GetByIdAsync(Guid transactionExternalId)
         {
-            return await _context.Transactions
-                .FirstOrDefaultAsync(t => t.TransactionExternalId == transactionExternalId)
-                ?? throw new KeyNotFoundException("Transacción no encontrada");
+            return await _context.Transactions.FirstOrDefaultAsync(t => t.TransactionExternalId == transactionExternalId);
+        }
+
+        public async Task UpdateAsync(BankTransaction bankTransaction)
+        {
+            _context.Transactions.Update(bankTransaction);
+            await _context.SaveChangesAsync();
         }
     }
 }

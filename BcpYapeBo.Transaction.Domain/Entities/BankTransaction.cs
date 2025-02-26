@@ -9,16 +9,16 @@ namespace BcpYapeBo.Transaction.Domain.Entities
         public Guid TransactionExternalId { get; private set; }
         public AccountId SourceAccountId { get; private set; }
         public AccountId TargetAccountId { get; private set; }
-        public TransactionType Type { get; private set; }
+        public BankTransactionType Type { get; private set; }
         public TransactionValue Value { get; private set; }
-        public TransactionStatus Status { get; private set; }
+        public BankTransactionStatus Status { get; private set; }
         public DateTime CreatedAt { get; private set; }
         public DateTime? ProcessedAt { get; private set; }
         public string RejectionReason { get; private set; }
         public int RetryCount { get; private set; }
 
         // ENTITY FRAMEWORK, SERIALIZADORES, ETC
-        private BankTransaction()
+        public BankTransaction()
         {
         }
 
@@ -29,7 +29,7 @@ namespace BcpYapeBo.Transaction.Domain.Entities
             decimal value)
         {
             // VALIDACION ESPECIFICA PARA 
-            if (!Enum.IsDefined(typeof(TransactionType), transactionTypeId))
+            if (!Enum.IsDefined(typeof(BankTransactionType), transactionTypeId))
                 throw new ArgumentException("El tipo de transacción no es válido.", nameof(transactionTypeId));
 
             // TODAS LAS DEMAS VALIDACIONES DE ENTRADA LAS REALIZA LOS VALUE OBJECTS
@@ -37,9 +37,9 @@ namespace BcpYapeBo.Transaction.Domain.Entities
             TransactionExternalId = Guid.NewGuid();
             SourceAccountId = AccountId.Create(sourceAccountId);
             TargetAccountId = AccountId.Create(targetAccountId);
-            Type = (TransactionType)transactionTypeId;
+            Type = (BankTransactionType)transactionTypeId;
             Value = TransactionValue.Create(value);
-            Status = TransactionStatus.Pending;
+            Status = BankTransactionStatus.Pending;
             CreatedAt = DateTime.UtcNow;
             RetryCount = 0;
 
@@ -54,7 +54,7 @@ namespace BcpYapeBo.Transaction.Domain.Entities
             // OTRAS REGLAS DE LA ENTIDAD ! 
         }
 
-        public void MarkAsProcessed(TransactionStatus newStatus, string rejectionReason = null)
+        public void MarkAsProcessed(BankTransactionStatus newStatus, string rejectionReason = null)
         {
             Status = newStatus;
             ProcessedAt = DateTime.UtcNow;
