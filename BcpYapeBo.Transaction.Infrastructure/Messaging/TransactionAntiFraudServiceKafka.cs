@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using BcpYapeBo.Transaction.Domain.Entities;
 using BcpYapeBo.Transaction.Application.Ports.Driven;
+using BcpYapeBo.Transaction.Domain.Exceptions;
 
 namespace BcpYapeBo.Transaction.Infrastructure.Messaging
 {
@@ -45,7 +46,7 @@ namespace BcpYapeBo.Transaction.Infrastructure.Messaging
                 if (deliveryResult.Status != PersistenceStatus.Persisted)
                 {
                     _logger.LogError("Transaction {TransactionId} failed to send to Kafka. Status: {Status}", transactionId, deliveryResult.Status);
-                    throw new Exception($"Failed to send transaction to Kafka. Status: {deliveryResult.Status}");
+                    throw new AntiFraudValidationException($"Failed to send transaction to Kafka. Status: {deliveryResult.Status}");
                 }
 
                 _logger.LogInformation("Transaction {TransactionId} successfully sent to Kafka topic {Topic}", transactionId, _topic);
@@ -53,7 +54,7 @@ namespace BcpYapeBo.Transaction.Infrastructure.Messaging
             catch (ProduceException<Null, string> ex)
             {
                 _logger.LogError(ex, "Kafka error while sending transaction {TransactionId}: {Error}", transactionId, ex.Error.Reason);
-                throw new Exception($"Kafka error: {ex.Error.Reason}", ex);
+                throw new AntiFraudValidationException($"Kafka error: {ex.Error.Reason}", ex);
             }
         }
 

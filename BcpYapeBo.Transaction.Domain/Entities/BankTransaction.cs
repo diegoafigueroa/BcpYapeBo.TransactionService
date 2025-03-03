@@ -31,7 +31,7 @@ namespace BcpYapeBo.Transaction.Domain.Entities
         {
             // VALIDACION ESPECIFICA PARA 
             if (!Enum.IsDefined(typeof(BankTransactionType), transactionTypeId))
-                throw new ArgumentException("El tipo de transacción no es válido.");
+                throw new PropertyValidationException("El tipo de transacción no es válido.");
 
             // TODAS LAS DEMAS VALIDACIONES DE ENTRADA LAS REALIZA LOS VALUE OBJECTS
 
