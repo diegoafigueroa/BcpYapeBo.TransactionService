@@ -1,5 +1,6 @@
 ﻿using System;
 using BcpYapeBo.Transaction.Domain.Enums;
+using BcpYapeBo.Transaction.Domain.Exceptions;
 using BcpYapeBo.Transaction.Domain.ValueObjects;
 
 namespace BcpYapeBo.Transaction.Domain.Entities
@@ -30,7 +31,7 @@ namespace BcpYapeBo.Transaction.Domain.Entities
         {
             // VALIDACION ESPECIFICA PARA 
             if (!Enum.IsDefined(typeof(BankTransactionType), transactionTypeId))
-                throw new ArgumentException("El tipo de transacción no es válido.", nameof(transactionTypeId));
+                throw new ArgumentException("El tipo de transacción no es válido.");
 
             // TODAS LAS DEMAS VALIDACIONES DE ENTRADA LAS REALIZA LOS VALUE OBJECTS
 
@@ -49,7 +50,7 @@ namespace BcpYapeBo.Transaction.Domain.Entities
         private void ValidateTransactionRules()
         {
             if (SourceAccountId == TargetAccountId)
-                throw new InvalidOperationException("No se puede realizar una transacción entre la misma cuenta.");
+                throw new BusinessRuleException("No se puede realizar una transacción entre la misma cuenta.");
 
             // OTRAS REGLAS DE LA ENTIDAD ! 
         }
@@ -61,11 +62,5 @@ namespace BcpYapeBo.Transaction.Domain.Entities
             RejectionReason = rejectionReason;
         }
 
-        public void IncrementRetryCount()
-        {
-            if (RetryCount >= 3)
-                throw new InvalidOperationException("Se alcanzó el máximo de reintentos");
-            RetryCount++;
-        }
     }
 }

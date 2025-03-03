@@ -6,8 +6,8 @@ using Serilog;
 using BcpYapeBo.Transaction.Application.Services;
 using BcpYapeBo.Transaction.API.Common;
 using BcpYapeBo.Transaction.Infrastructure.Messaging;
-using BcpYapeBo.Transaction.Application.Ports.Driving;
 using BcpYapeBo.Transaction.Application.Ports.Driven;
+using BcpYapeBo.Transaction.Application.Commands;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,7 +28,7 @@ builder.Services.AddControllers();
 
 // REGISTER INTERNAL/EXTERNAL PORTS IN THE DEPENDENCY CONTAINER (WITH THEIR ADAPTERS)
 builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
-builder.Services.AddScoped<ITransactionService, TransactionService>();
+builder.Services.AddScoped<ITransactionCommandService, TransactionCommandService>();
 builder.Services.AddScoped<ITransactionAntiFraudService, TransactionAntiFraudServiceKafka>();
 builder.Services.AddHostedService<TransactionAntiFraudStatusConsumerKafka>();
 
@@ -62,7 +62,7 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
 app.UseHttpsRedirection();
 app.MapControllers();
 

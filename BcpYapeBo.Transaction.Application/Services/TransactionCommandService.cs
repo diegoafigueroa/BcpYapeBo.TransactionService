@@ -1,5 +1,5 @@
-﻿using BcpYapeBo.Transaction.Application.Ports.Driven;
-using BcpYapeBo.Transaction.Application.Ports.Driving;
+﻿using BcpYapeBo.Transaction.Application.Commands;
+using BcpYapeBo.Transaction.Application.Ports.Driven;
 using BcpYapeBo.Transaction.Domain.Entities;
 using BcpYapeBo.Transaction.Domain.Enums;
 using BcpYapeBo.Transaction.Domain.ValueObjects;
@@ -7,26 +7,26 @@ using System.Transactions;
 
 namespace BcpYapeBo.Transaction.Application.Services
 {
-    public class TransactionService : ITransactionService
+    public class TransactionCommandService : ITransactionCommandService
     {
         private readonly ITransactionRepository _transactionRepository;
         private readonly ITransactionAntiFraudService _transactionAntiFraudService;
 
-        public TransactionService(ITransactionRepository transactionRepository, ITransactionAntiFraudService transactionAntiFraudService)
+        public TransactionCommandService(ITransactionRepository transactionRepository, ITransactionAntiFraudService transactionAntiFraudService)
         {
             _transactionRepository = transactionRepository;
             _transactionAntiFraudService = transactionAntiFraudService;
         }
 
-        public async Task<Guid> CreateTransactionAsync(Guid sourceAccountId, Guid targetAccountId, int transferTypeId, decimal value)
+        public async Task<BankTransaction> Handle(CreateTransactionCommand command)
         {
             // CREA UNA NUEVA INSTANCIA DE LA TRANSACCIÓN BANCARIA CON LOS DATOS PROPORCIONADOS.
             // EL MODELO TIENE REGLAS DE VALIDACION QUE GARANTIZAN LA CONSISTENCIA DE LOS DATOS.
             var bankTransaction = new BankTransaction(
-                sourceAccountId: sourceAccountId,
-                targetAccountId: targetAccountId,
-                transactionTypeId: transferTypeId,
-                value: value
+                command.SourceAccountId,
+                command.TargetAccountId,
+                command.TransferTypeId,
+                command.Value
             );
 
             // GUARDA LA TRANSACCIÓN EN EL REPOSITORIO DE BASE DE DATOS.
@@ -41,14 +41,8 @@ namespace BcpYapeBo.Transaction.Application.Services
 
             // TODO. ACA SE PUEDEN COLOCAR OTRAS REGLAS DE NEGOCIO ASOCIADOS A LA TRANSACCIÓN.
 
-            // RETORNA EL IDENTIFICADOR ÚNICO EXTERNO DE LA TRANSACCIÓN, 
-            // QUE PUEDE SER UTILIZADO PARA RASTREO O REFERENCIA EN OTROS PROCESOS DEL SISTEMA.
-            return bankTransaction.TransactionExternalId;
-        }
-
-        public async Task<BankTransaction> GetTransactionAsync(Guid transactionExternalId)
-        {
-            return await _transactionRepository.GetByIdAsync(transactionExternalId);
+            // RETORNA LA TRANSACCIÓN, 
+            return bankTransaction;
         }
 
         public async Task UpdateTransactionStatusWithAntiFraudCheckAsync(AntiFraudValidationResult antiFraudValidationResult)

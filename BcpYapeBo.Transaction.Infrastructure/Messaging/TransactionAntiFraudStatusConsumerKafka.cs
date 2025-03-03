@@ -1,5 +1,5 @@
-﻿using BcpYapeBo.Transaction.Application.Ports.Driven;
-using BcpYapeBo.Transaction.Application.Ports.Driving;
+﻿using BcpYapeBo.Transaction.Application.Commands;
+using BcpYapeBo.Transaction.Application.Ports.Driven;
 using BcpYapeBo.Transaction.Application.Services;
 using BcpYapeBo.Transaction.Domain.Entities;
 using BcpYapeBo.Transaction.Infrastructure.Repositories;
@@ -71,7 +71,7 @@ namespace BcpYapeBo.Transaction.Infrastructure.Messaging
                     using (var scope = _serviceScopeFactory.CreateScope())
                     {
                         // OBTIENE EL SERVICIO DE TRANSACCIÓN DESDE EL SCOPE Y ACTULIZA EL ESTADO
-                        var transactionService = scope.ServiceProvider.GetRequiredService<ITransactionService>();
+                        var transactionService = scope.ServiceProvider.GetRequiredService<ITransactionCommandService>();
                         transactionService.UpdateTransactionStatusWithAntiFraudCheckAsync(validationResult);
                     }
 
